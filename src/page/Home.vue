@@ -25,15 +25,20 @@
         width="30%"
        @close="exitLogin"
     >
-            <el-row>
+        <div v-loading="loading">
+            <el-row >
                 <el-col :span="19">
-                    <el-input v-model="QQ" placeholder="QQ账号" />
+                    <el-input :disabled="QQDisable" v-model="QQ" placeholder="QQ账号" />
                 </el-col>
                 <el-col :span="4">
-                    <el-button style="margin-left: 20px" type="success" @click="loginQQ(QQ)">登录</el-button>
+                    <el-button :disabled="QQDisable" style="margin-left: 20px" type="success" @click="loginQQ(QQ)">登录</el-button>
                 </el-col>
             </el-row>
-            <img style="text-align: center" :src="url"  alt=""/>
+            <div  v-loading="loadingCode" style="text-align: center">
+                <img style="text-align: center" :src="url"  alt=""/>
+            </div>
+        </div>
+
 
 
 
@@ -54,50 +59,71 @@ const dialogVisible = ref(false)
 let QQBots:any = ref([]);
 let QQ = ref("");
 let socket;
-let url = ref('');
-let timer1;
+let url = ref('')
+let loading = ref(false)
+let loadingCode= ref(false)
+let QQDisable = ref(false)
 function getBotsImpl(){
     Api.getQQBots().then(e=>{
         QQBots.value = e.data.data
-        setTimeout(function (){
-            getBotsImpl()
-        },2000)
     }).catch(()=>{
+        console.log("服务器未连接")
+    }).finally(()=>{
         setTimeout(function (){
             getBotsImpl()
         },2000)
     })
 }
 function getQRCodeImpl(){
-    timer1 = setInterval(function (){
-       Api.getQRCode(QQ.value).then(e=>{
-           url.value = window.URL.createObjectURL(e.data)
-       })
-    },500)
+    Api.getQRCode(QQ.value).then(e=>{
+        url.value = window.URL.createObjectURL(e.data)
+    })
 }
 
 function loginQQ(qq:string){
     socket = new WebSocket("ws://localhost:8081/loginSocket/"+qq);
+    loading.value = true
     socket.onmessage = msg =>{
         switch (msg.data) {
             case "开始验证":
+                loading.value = false
+                loadingCode.value = false
+                QQDisable.value = true
                 getQRCodeImpl()
                 break;
             case "登录成功":
-                console.log(111)
                 exitLogin()
+                break;
+            case "扫码成功":
+                loadingCode.value = false
+                loading.value = true
+                break;
+            case "确认中":
+                loadingCode.value = true
+                break;
+            case "取消扫码":
+                loadingCode.value = false
+                loading.value = false
+                getQRCodeImpl()
+                break;
+            case "扫码过期":
+                loadingCode.value = false
+                loading.value = false
+                getQRCodeImpl()
                 break;
         }
     }
+    socket.onopen = () => {
+        QQDisable.value = true
+    }
 }
 function exitLogin(){
-    if (socket instanceof WebSocket){
-        socket.close()
-    }
+    QQDisable.value = false
+    loading.value = false
+    dialogVisible.value = false
+
     QQ.value = ''
     url.value = ''
-    dialogVisible.value = true
-    clearInterval(timer1)
 }
 getBotsImpl()
 
