@@ -18,8 +18,8 @@ import 'element-plus/dist/index.css'
 const app = createApp(App);
 app.use(ElementPlus)
 app.use(Router)
-
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
+
 app.mount('#app')
