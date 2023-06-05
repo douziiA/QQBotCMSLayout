@@ -1,6 +1,6 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
 import Home from "@/page/Home.vue";
-import LoginPage from "@/page/LoginPage.vue";
+import Log from "@/page/Log.vue";
 
 
 export default createRouter({
@@ -15,9 +15,12 @@ export default createRouter({
             }
         },
         {
-            path: '/login',
-            component: LoginPage,
-            name: "登录"
+            path: '/log',
+            component: Log,
+            name: "日志",
+            meta:{
+                icon: "InfoFilled"
+            }
         }
     ]
 })

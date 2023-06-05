@@ -10,5 +10,11 @@ export default {
             responseType: 'blob'
         })
 
+    },
+    exitQQBot(qq:any){
+        return axios.delete(this.ip+'/bot?qq='+qq.toString())
+    },
+    getLog(qq:any){
+        return axios.get(this.ip+'/log?qq='+qq.toString())
     }
 }

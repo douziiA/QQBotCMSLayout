@@ -19,6 +19,8 @@
 // import HelloWorld from './components/HelloWorld.vue'
 import SideBar from "@/components/SideBar.vue";
 import PageHeader from "./components/Header.vue";
+import {getCurrentInstance, inject} from 'vue'
+inject("")
 
 // console.log(this)
 </script>

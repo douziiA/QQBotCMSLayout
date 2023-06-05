@@ -18,12 +18,20 @@
 
         <el-table-column prop="group" label="群数量" />
         <el-table-column prop="friend" label="好友数量"/>
+        <el-table-column label="操作">
+            <template #default="scope">
+                <el-button type="danger" v-if="scope.row.online" @click="exitQQBotImpl(scope.row.qq)">注销</el-button>
+                <el-button type="info" v-if="scope.row.online">日志</el-button>
+            </template>
+        </el-table-column>
     </el-table>
     <el-dialog
         v-model="dialogVisible"
+        destroy-on-close
         title="Tips"
         width="30%"
-       @close="exitLogin"
+        :close-on-click-modal="false"
+        @close="exitLogin"
     >
         <div v-loading="loading">
             <el-row >
@@ -31,7 +39,7 @@
                     <el-input :disabled="QQDisable" v-model="QQ" placeholder="QQ账号" />
                 </el-col>
                 <el-col :span="4">
-                    <el-button :disabled="QQDisable" style="margin-left: 20px" type="success" @click="loginQQ(QQ)">登录</el-button>
+                    <el-button :disabled="QQDisable" style="margin-left: 10px" type="success" @click="loginQQ(QQ)">扫码登录</el-button>
                 </el-col>
             </el-row>
             <div  v-loading="loadingCode" style="text-align: center">
@@ -51,9 +59,12 @@
 <script lang="ts" setup>
 import app from "@/App.vue";
 import axios from "axios";
-import {Ref, ref, UnwrapRef} from "vue";
+import {getCurrentInstance, inject, Ref, ref, UnwrapRef} from "vue";
 import Api from "@/api/Api";
 import {Base64} from "js-base64";
+import {ElMessage} from "element-plus";
+import App from "@/App.vue";
+import {Vue} from "vue-class-component";
 
 const dialogVisible = ref(false)
 let QQBots:any = ref([]);
@@ -63,36 +74,108 @@ let url = ref('')
 let loading = ref(false)
 let loadingCode= ref(false)
 let QQDisable = ref(false)
+const $botLog = inject("botLog")
 function getBotsImpl(){
     Api.getQQBots().then(e=>{
         QQBots.value = e.data.data
-    }).catch(()=>{
-        console.log("服务器未连接")
-    }).finally(()=>{
-        setTimeout(function (){
-            getBotsImpl()
-        },2000)
+        e.data.data.forEach(value=>{
+            if (value.online){
+                openLog(value.qq)
+            }
+        })
+    }).catch(e=>{
+        console.log(e)
     })
 }
 function getQRCodeImpl(){
     Api.getQRCode(QQ.value).then(e=>{
         url.value = window.URL.createObjectURL(e.data)
+        ElMessage({
+            type: 'success',
+            message: '二维码获取成功'
+        })
     })
 }
 
+function exitQQBotImpl(qq:string){
+    Api.exitQQBot(qq).then(e=>{
+        getBotsImpl()
+        closeLog(qq)
+        ElMessage({
+            type: 'success',
+            message: e.data.message
+        })
+    }).catch(e=>{
+        ElMessage({
+            type: 'error',
+            message: e.data.message
+        })
+    })
+}
+
+function closeLog(qq){
+    $botLog[qq].socket.close()
+}
+
+function openLog(qq){
+    if ($botLog.hasOwnProperty(qq)){
+
+        if ( $botLog[qq].socket.readyState == 1){
+            return;
+        }
+    }
+    let logSocket = new WebSocket("ws://localhost:8081/logSocket/"+qq);
+    logSocket.onopen = () => {
+        if ($botLog.hasOwnProperty(qq)){
+
+            if ( $botLog[qq].socket.readyState == 1){
+                logSocket.close()
+                return;
+            }
+        }
+        $botLog[qq]={
+            log:[],
+            socket: logSocket
+        }
+
+    }
+    logSocket.onmessage = msg => {
+        $botLog[qq].log.push(msg.data)
+        console.log($botLog[qq].log)
+
+    }
+
+}
+
+
 function loginQQ(qq:string){
+    if (QQ.value == ''){
+        ElMessage({
+            type: 'error',
+            message: "QQ账号不能为空"
+        })
+        return;
+    }
     socket = new WebSocket("ws://localhost:8081/loginSocket/"+qq);
     loading.value = true
     socket.onmessage = msg =>{
         switch (msg.data) {
+
             case "开始验证":
                 loading.value = false
                 loadingCode.value = false
                 QQDisable.value = true
+                getBotsImpl()
                 getQRCodeImpl()
                 break;
             case "登录成功":
-                exitLogin()
+                ElMessage({
+                    type: "success",
+                    message: "登录成功"
+                })
+                getBotsImpl()
+
+                exitLogin(true)
                 break;
             case "扫码成功":
                 loadingCode.value = false
@@ -109,7 +192,14 @@ function loginQQ(qq:string){
             case "扫码过期":
                 loadingCode.value = false
                 loading.value = false
-                getQRCodeImpl()
+                break;
+            case "重复登录":
+                socket.close()
+                ElMessage({
+                    type: "error",
+                    message: "此账号已经登录"
+                })
+                exitLogin()
                 break;
         }
     }
@@ -117,13 +207,20 @@ function loginQQ(qq:string){
         QQDisable.value = true
     }
 }
-function exitLogin(){
+function exitLogin(flag = false){
+
     QQDisable.value = false
     loading.value = false
     dialogVisible.value = false
+    if (socket instanceof WebSocket){
+        if (!flag){
+            socket.close()
+        }
 
+    }
     QQ.value = ''
     url.value = ''
+    getBotsImpl()
 }
 getBotsImpl()
 
