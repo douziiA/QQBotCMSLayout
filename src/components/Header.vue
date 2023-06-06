@@ -13,10 +13,8 @@
 <script lang="ts" setup>
     import {useRouter} from "vue-router";
 
-    const path = useRouter().currentRoute.value.fullPath;
-    const title = useRouter().getRoutes().findLast(value => {
-        return value.path == path
-    }).name
+    const path = useRouter().currentRoute.value.path;
+    const title = useRouter().currentRoute.value.meta.title;
 </script>
 
 

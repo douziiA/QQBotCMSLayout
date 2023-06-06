@@ -9,16 +9,19 @@ export default createRouter({
         {
             path: '/',
             component: Home,
-            name: "首页",
+            name: "home",
             meta:{
+                title: "机器人列表",
                 icon: "HomeFilled"
             }
         },
         {
-            path: '/log',
+            path: '/log/:qq',
             component: Log,
-            name: "日志",
+            name: "log",
             meta:{
+                hidden: true,
+                title: "日志",
                 icon: "InfoFilled"
             }
         }

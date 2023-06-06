@@ -8,9 +8,9 @@
             :key="currentPath"
             :router="true"
     >
-        <el-menu-item :key="k" v-for="(v,k) in routes" :route="v" :index="v.path">
+        <el-menu-item :key="k" v-for="(v,k) in routes"   :route="v" :index="v.path">
             <el-icon><component :is="v.meta.icon"></component></el-icon>
-            <span>{{v.name}}</span>
+            <span>{{v.meta.title}}</span>
         </el-menu-item>
     </el-menu>
 
@@ -20,8 +20,10 @@
 import {RouteRecord, useRoute, useRouter} from "vue-router";
 import App from "@/App.vue";
 
-const routes:RouteRecord[]= useRouter().getRoutes();
-const currentPath: any = useRouter().currentRoute.value.fullPath;
+const routes:RouteRecord[]= useRouter().getRoutes().filter(value => {
+    return !value.meta.hidden
+});
+const currentPath: any = useRouter().currentRoute.value.path;
 
 </script>
 

@@ -21,7 +21,7 @@
         <el-table-column label="操作">
             <template #default="scope">
                 <el-button type="danger" v-if="scope.row.online" @click="exitQQBotImpl(scope.row.qq)">注销</el-button>
-                <el-button type="info" v-if="scope.row.online">日志</el-button>
+                <el-button type="info" @click="goLog(scope.row.qq)" v-if="scope.row.online">日志</el-button>
             </template>
         </el-table-column>
     </el-table>
@@ -65,7 +65,9 @@ import {Base64} from "js-base64";
 import {ElMessage} from "element-plus";
 import App from "@/App.vue";
 import {Vue} from "vue-class-component";
+import {RouteLocationRaw, useRouter} from "vue-router";
 
+const router = useRouter()
 const dialogVisible = ref(false)
 let QQBots:any = ref([]);
 let QQ = ref("");
@@ -75,14 +77,17 @@ let loading = ref(false)
 let loadingCode= ref(false)
 let QQDisable = ref(false)
 const $botLog = inject("botLog")
+
+function goLog(qq){
+  const data: RouteLocationRaw = {
+    path: "/log/"+qq,
+  }
+  router.push(data)
+}
+
 function getBotsImpl(){
     Api.getQQBots().then(e=>{
         QQBots.value = e.data.data
-        e.data.data.forEach(value=>{
-            if (value.online){
-                openLog(value.qq)
-            }
-        })
     }).catch(e=>{
         console.log(e)
     })
@@ -117,35 +122,6 @@ function closeLog(qq){
     $botLog[qq].socket.close()
 }
 
-function openLog(qq){
-    if ($botLog.hasOwnProperty(qq)){
-
-        if ( $botLog[qq].socket.readyState == 1){
-            return;
-        }
-    }
-    let logSocket = new WebSocket("ws://localhost:8081/logSocket/"+qq);
-    logSocket.onopen = () => {
-        if ($botLog.hasOwnProperty(qq)){
-
-            if ( $botLog[qq].socket.readyState == 1){
-                logSocket.close()
-                return;
-            }
-        }
-        $botLog[qq]={
-            log:[],
-            socket: logSocket
-        }
-
-    }
-    logSocket.onmessage = msg => {
-        $botLog[qq].log.push(msg.data)
-        console.log($botLog[qq].log)
-
-    }
-
-}
 
 
 function loginQQ(qq:string){
