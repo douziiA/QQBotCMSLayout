@@ -1,6 +1,7 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
 import Home from "@/page/Home.vue";
 import Log from "@/page/Log.vue";
+import Plugin from "@/page/Plugin.vue";
 
 
 export default createRouter({
@@ -13,6 +14,15 @@ export default createRouter({
             meta:{
                 title: "机器人列表",
                 icon: "HomeFilled"
+            }
+        },
+        {
+            path: '/plugin',
+            component: Plugin,
+            name: "plugin",
+            meta:{
+                title: "插件",
+                icon: "Coin"
             }
         },
         {

@@ -106,14 +106,15 @@ function exitQQBotImpl(qq:string){
     Api.exitQQBot(qq).then(e=>{
         getBotsImpl()
         closeLog(qq)
+        console.log(e)
         ElMessage({
             type: 'success',
-            message: e.data.message
+            message: "退出成功"
         })
     }).catch(e=>{
         ElMessage({
             type: 'error',
-            message: e.data.message
+            message: e.message
         })
     })
 }

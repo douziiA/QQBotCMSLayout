@@ -16,5 +16,8 @@ export default {
     },
     getLog(qq:any){
         return axios.get(this.ip+'/log/'+qq.toString())
+    },
+    getPlugins(){
+        return axios.get(this.ip+'/plugins')
     }
 }
